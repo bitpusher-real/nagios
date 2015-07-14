@@ -65,12 +65,22 @@ end
 nagios_bags = NagiosDataBags.new
 pagerduty_contacts = nagios_bags.get('nagios_pagerduty')
 
-nagios_command 'notify-service-by-pagerduty' do
-  options 'command_line' => ::File.join(node['nagios']['plugin_dir'], 'notify_pagerduty.pl') + ' enqueue -f pd_nagios_object=service'
-end
+if node['nagios']['server']['url'] =~ /nagios-4\.x/
+  nagios_command 'notify-service-by-pagerduty' do
+    options 'command_line' => ::File.join(node['nagios']['plugin_dir'], 'notify_pagerduty.pl') + ' enqueue -f pd_nagios_object=service -f CONTACTPAGER="$CONTACTPAGER$" -f NOTIFICATIONTYPE="$NOTIFICATIONTYPE$" -f HOSTNAME="$HOSTNAME$" -f SERVICEDESC="$SERVICEDESC$" -f SERVICESTATE="$SERVICESTATE$"'
+  end
 
-nagios_command 'notify-host-by-pagerduty' do
-  options 'command_line' => ::File.join(node['nagios']['plugin_dir'], 'notify_pagerduty.pl') + ' enqueue -f pd_nagios_object=host'
+  nagios_command 'notify-host-by-pagerduty' do
+    options 'command_line' => ::File.join(node['nagios']['plugin_dir'], 'notify_pagerduty.pl') + ' enqueue -f pd_nagios_object=host -f CONTACTPAGER="$CONTACTPAGER$" -f NOTIFICATIONTYPE="$NOTIFICATIONTYPE$" -f HOSTNAME="$HOSTNAME$" -f HOSTSTATE="$HOSTSTATE$"'
+  end
+else
+  nagios_command 'notify-service-by-pagerduty' do
+    options 'command_line' => ::File.join(node['nagios']['plugin_dir'], 'notify_pagerduty.pl') + ' enqueue -f pd_nagios_object=service'
+  end
+
+  nagios_command 'notify-host-by-pagerduty' do
+    options 'command_line' => ::File.join(node['nagios']['plugin_dir'], 'notify_pagerduty.pl') + ' enqueue -f pd_nagios_object=host'
+  end
 end
 
 unless node['nagios']['pagerduty']['key'].nil? || node['nagios']['pagerduty']['key'].empty?
